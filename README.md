@@ -32,7 +32,7 @@ Displays an hourly table of your energy demand vs solar consumption for any time
 └─────────────────────┴────────┴────────┴────────┴──────────────────────────┘
 ```
 
-All values are in **kWh**. Times are displayed in **AEDT (UTC+11)**.
+All values are in **kWh**. Times are displayed in the **local system timezone**.
 
 ### Requirements
 
@@ -76,8 +76,8 @@ python3 cli/solshare.py --from 2026-02-20 --to 2026-02-26
 
 | Argument | Description |
 |---|---|
-| `--from YYYY-MM-DD` | Start date in AEDT (default: 24 hours ago) |
-| `--to YYYY-MM-DD` | End date in AEDT, inclusive (default: same as `--from`) |
+| `--from YYYY-MM-DD` | Start date in local time (default: 24 hours ago) |
+| `--to YYYY-MM-DD` | End date in local time, inclusive (default: same as `--from`) |
 | `--email` | Email address (overrides `~/.solshare`) |
 | `--password` | Password (overrides `~/.solshare`) |
 | `--save` | Save `--email` and `--password` to `~/.solshare` |

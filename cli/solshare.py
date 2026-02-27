@@ -4,8 +4,8 @@ solshare.py - Fetch and display energy data from the Allume Energy SolCentre API
 
 Usage:
     python3 solshare.py                        # last 24 hours
-    python3 solshare.py --from 2026-02-25      # single day (AEDT)
-    python3 solshare.py --from 2026-02-20 --to 2026-02-27  # date range (AEDT)
+    python3 solshare.py --from 2026-02-25      # single day (local time)
+    python3 solshare.py --from 2026-02-20 --to 2026-02-27  # date range (local time)
 
 Config file (~/.solshare):
     [credentials]
@@ -22,9 +22,9 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone, timedelta
 
-API_BASE   = "https://api.allumeenergy.com.au/v2"
+API_BASE    = "https://api.allumeenergy.com.au/v2"
 CONFIG_PATH = os.path.expanduser("~/.solshare")
-AEDT        = timezone(timedelta(hours=11))
+LOCAL_TZ    = datetime.now().astimezone().tzinfo
 BAR_WIDTH   = 20
 
 
@@ -115,17 +115,19 @@ def print_table(data):
         return
 
     max_demand = max(r['energyDemand'] for r in data) or 1
+    tz_name    = datetime.now(LOCAL_TZ).strftime("%Z")
+    time_hdr   = f"Time ({tz_name})"
 
     print()
     print('┌─────────────────────┬────────┬────────┬────────┬──────────────────────────┐')
-    print('│ Time (AEDT)         │ Demand │  Solar │   Grid │ Solar coverage           │')
+    print(f'│ {time_hdr:<19} │ Demand │  Solar │   Grid │ Solar coverage           │')
     print('├─────────────────────┼────────┼────────┼────────┼──────────────────────────┤')
 
     total_demand = 0
     total_solar  = 0
 
     for r in data:
-        t      = datetime.fromisoformat(r['startAt'].replace('Z', '+00:00')).astimezone(AEDT)
+        t      = datetime.fromisoformat(r['startAt'].replace('Z', '+00:00')).astimezone(LOCAL_TZ)
         demand = r['energyDemand']
         solar  = max(r['solarConsumed'], 0)   # clamp API rounding artefacts
         grid   = round(demand - solar, 2)
@@ -153,15 +155,15 @@ def last_24h():
 
 
 def date_range(from_str, to_str):
-    """Parse YYYY-MM-DD strings as AEDT midnight boundaries, return UTC unix seconds."""
+    """Parse YYYY-MM-DD strings as local midnight boundaries, return UTC unix seconds."""
     fmt = "%Y-%m-%d"
     try:
-        from_dt = datetime.strptime(from_str, fmt).replace(tzinfo=AEDT)
+        from_dt = datetime.strptime(from_str, fmt).replace(tzinfo=LOCAL_TZ)
     except ValueError:
         print(f"Invalid --from date '{from_str}'. Use YYYY-MM-DD.", file=sys.stderr)
         sys.exit(1)
     try:
-        to_dt = datetime.strptime(to_str, fmt).replace(tzinfo=AEDT) + timedelta(days=1)
+        to_dt = datetime.strptime(to_str, fmt).replace(tzinfo=LOCAL_TZ) + timedelta(days=1)
     except ValueError:
         print(f"Invalid --to date '{to_str}'. Use YYYY-MM-DD.", file=sys.stderr)
         sys.exit(1)
@@ -177,9 +179,9 @@ def parse_args():
         description="Display SolShare energy data from the Allume Energy API."
     )
     parser.add_argument("--from", dest="from_date", metavar="YYYY-MM-DD",
-                        help="Start date in AEDT (default: 24 hours ago)")
+                        help="Start date in local time (default: 24 hours ago)")
     parser.add_argument("--to",   dest="to_date",   metavar="YYYY-MM-DD",
-                        help="End date in AEDT, inclusive (default: today)")
+                        help="End date in local time, inclusive (default: today)")
     parser.add_argument("--email",    help="Override email from config")
     parser.add_argument("--password", help="Override password from config")
     parser.add_argument("--save",     action="store_true",
