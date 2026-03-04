@@ -63,6 +63,10 @@ final class TrendsViewModel: ObservableObject {
             dataPoints = points
         } catch let error as APIError where error == .invalidToken {
             AuthManager.shared.handleTokenExpiry()
+        } catch is CancellationError {
+            // pull-to-refresh dismissed early — ignore
+        } catch let urlError as URLError where urlError.code == .cancelled {
+            // URLSession cancelled — ignore
         } catch {
             errorMessage = error.localizedDescription
         }
