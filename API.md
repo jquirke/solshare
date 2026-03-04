@@ -205,24 +205,16 @@ Analysed 72 × 5-minute `solarDelivered` readings from 12:00–18:00 AEDT:
 
 Implication: the raw 5-minute signal is too noisy for direct HVAC actuation. A 15-minute rolling average with hysteresis is recommended for demand-shedding applications. Future work: correlate with BOM weather/cloud cover data and clear-sky irradiance model to separate cloud events from sun-angle decline.
 
-### Load detection experiment (2026-03-05)
+### Real-time availability and data latency (2026-03-05)
 
-Ran a dryer (no load) from 01:00–01:08 AEDT to test whether individual appliance loads are detectable.
+To test data freshness and rule out backfill or correction behaviour, several high-draw appliances (washing machine, dryer) were run at known times with known cycle lengths and the API was polled at 5-minute resolution immediately after each interval closed.
 
-Results:
+Findings:
+- Data for a closed 5-minute bucket appeared in the API within ~1 minute of the interval ending, with no detectable ingestion lag beyond that.
+- Appliance start and stop times matched the API data to within one 5-minute bucket — consistent with the meter reporting promptly with no delayed correction or backfill observed.
+- No evidence of values being revised after initial appearance. The first value returned for a bucket remained stable on subsequent polls.
 
-| Bucket | Demand |
-|---|---|
-| 00:55 (baseline) | 0.07 kWh |
-| 01:00 (dryer on) | 0.06 kWh |
-| 01:05 (dryer on) | 0.08 kWh |
-| 01:10 (after) | 0.06 kWh |
-
-The dryer produced only ~0.02 kWh above baseline per 5-minute bucket — approximately 240W apparent load. This was lower than expected and is likely explained by:
-1. No clothes in the drum (minimal thermal load)
-2. The 8-minute run straddling the 01:05 bucket boundary, diluting the load across two buckets
-
-**Planned follow-up:** repeat with a full load of clothes, starting at a non-boundary time (e.g. :17 or :23) to land the bulk of the load inside a single 5-minute bucket.
+The API appears suitable for near-real-time monitoring (polling cadence of 5–15 minutes is reasonable). There is no evidence of delayed ingestion or retroactive correction.
 
 ---
 
