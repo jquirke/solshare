@@ -18,6 +18,10 @@ SENSORS = [
     ("solar_exported", "today",     "Today Solar Exported",     "kWh", SensorDeviceClass.ENERGY, "mdi:solar-power"),
     ("solar_percent",  "today",     "Today Solar Percent",      "%",   None,                     "mdi:percent"),
     ("demand",         "today",     "Today Total Demand",       "kWh", SensorDeviceClass.ENERGY, "mdi:lightning-bolt"),
+    ("solar_consumed", "current",   "Current Solar Consumed",   "kWh", SensorDeviceClass.ENERGY, "mdi:solar-power"),
+    ("grid_import",    "current",   "Current Grid Import",      "kWh", SensorDeviceClass.ENERGY, "mdi:transmission-tower"),
+    ("solar_exported", "current",   "Current Solar Exported",   "kWh", SensorDeviceClass.ENERGY, "mdi:solar-power"),
+    ("solar_percent",  "current",   "Current Solar Percent",    "%",   None,                     "mdi:percent"),
 ]
 
 

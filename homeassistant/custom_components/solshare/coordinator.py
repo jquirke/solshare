@@ -79,24 +79,31 @@ class SolShareCoordinator(DataUpdateCoordinator):
         today_from = int(start_of_day.timestamp())
         today_to = int(local_now.timestamp())
 
-        last_hour_snaps = await self._fetch_snapshots(last_hour_from, last_hour_to)
-        if last_hour_snaps is None:
-            # Token expired — re-login and retry
-            await self._login()
-            await self._fetch_properties()
-            last_hour_snaps = await self._fetch_snapshots(last_hour_from, last_hour_to)
+        # Current 5-min bucket: last closed 5-minute window
+        minute_floor = (now_utc.minute // 5) * 5
+        current_bucket = now_utc.replace(minute=minute_floor, second=0, microsecond=0)
+        five_min_to = int(current_bucket.timestamp())
+        five_min_from = five_min_to - 300
 
-        today_snaps = await self._fetch_snapshots(today_from, today_to)
-        if today_snaps is None:
-            await self._login()
-            today_snaps = await self._fetch_snapshots(today_from, today_to)
+        async def fetch_with_retry(from_ts, to_ts):
+            snaps = await self._fetch_snapshots(from_ts, to_ts)
+            if snaps is None:
+                await self._login()
+                await self._fetch_properties()
+                snaps = await self._fetch_snapshots(from_ts, to_ts)
+            return snaps
 
-        if last_hour_snaps is None or today_snaps is None:
+        last_hour_snaps = await fetch_with_retry(last_hour_from, last_hour_to)
+        today_snaps = await fetch_with_retry(today_from, today_to)
+        five_min_snaps = await fetch_with_retry(five_min_from, five_min_to)
+
+        if last_hour_snaps is None or today_snaps is None or five_min_snaps is None:
             raise UpdateFailed("Failed to fetch snapshot data after re-login")
 
         return {
             "last_hour": _aggregate(last_hour_snaps),
             "today": _aggregate(today_snaps),
+            "current": _aggregate(five_min_snaps),
         }
 
 
