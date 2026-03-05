@@ -1,20 +1,22 @@
 # solshare
 
-Know your solar. A CLI, Alexa skill, and native iOS app for monitoring rooftop solar generation and consumption via the [Allume Energy SolCentre](https://solcentre.allumeenergy.com) API. ESPHome integration and smart device consumption tracking coming soon.
+Know your solar. A CLI, Alexa skill, native iOS app, and Home Assistant integration for monitoring rooftop solar generation and consumption via the [Allume Energy SolCentre](https://solcentre.allumeenergy.com) API.
 
 ## Structure
 
 ```
 solshare/
-├── cli/            # Command-line tool
+├── cli/              # Command-line tool
 │   └── solshare.py
-├── alexa-skill/    # Alexa voice skill
+├── alexa-skill/      # Alexa voice skill
 │   ├── lambda/
 │   └── skill-package/
-├── ios/            # iOS app (SolarSlice)
+├── ios/              # iOS app (SolarSlice)
 │   ├── SETUP.md
 │   └── SolarSlice/
-└── API.md          # Allume Energy API reference
+├── homeassistant/    # Home Assistant custom integration
+│   └── custom_components/solshare/
+└── API.md            # Allume Energy API reference
 ```
 
 ## CLI
@@ -203,6 +205,26 @@ The app is currently available to beta testers via TestFlight. Public App Store 
 **Requirements:** iOS 16+, Xcode 15+, paid Apple Developer account (to build from source)
 
 See [ios/SETUP.md](ios/SETUP.md) for Xcode project setup instructions.
+
+---
+
+## Home Assistant Integration
+
+A custom integration exposing SolShare data as HA sensors, updated every 5 minutes.
+
+**Sensors exposed:**
+- Last hour: solar consumed, grid import, solar exported, solar %
+- Today: solar consumed, grid import, solar exported, solar %, total demand
+
+**Installation:**
+
+```bash
+cp -r homeassistant/custom_components/solshare /your/ha/config/custom_components/
+```
+
+Restart Home Assistant, then add via **Settings → Integrations → Add Integration → SolShare**. Enter your SolCentre email and password.
+
+Once configured, sensors appear immediately and can be added to a dashboard via **Edit Dashboard → Add Card → Entities**. Historical data is not back-populated — graphs will build from the time of installation.
 
 ---
 

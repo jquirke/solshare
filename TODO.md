@@ -11,9 +11,6 @@ Currently the widget only updates when the main app is opened. To enable true ba
 
 ## Home Assistant Integration
 
-### REST sensor (quick win)
-Poll the Allume API from HA using a `rest` sensor in `configuration.yaml` — exposes `solarConsumed`, `gridImport`, `solarPercent` as HA sensors with no custom component needed. JWT refresh every 14 days needs handling (script or automation to re-login and update the token).
-
 ### Solar-driven AC automation
 Use existing IR blaster AC control + SolShare solar sensors to:
 - Pre-cool when solar export exceeds a threshold (use free energy)
