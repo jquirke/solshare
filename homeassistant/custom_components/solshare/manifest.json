@@ -1,0 +1,10 @@
+{
+  "domain": "solshare",
+  "name": "SolShare",
+  "version": "1.0.0",
+  "documentation": "https://github.com/jquirke/solshare",
+  "codeowners": ["@jquirke"],
+  "requirements": [],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
