@@ -19,8 +19,6 @@ Use existing IR blaster AC control + SolShare solar sensors to:
 - Raise AC setpoint when grid import spikes
 - Shift AC runtime to peak solar hours instead of fixed schedule
 
-### strings.json for config flow error messages
-Add `strings.json` so HA displays human-readable errors ("Invalid credentials", "Cannot connect") instead of raw keys in the setup UI.
 
 ### HACS custom integration (longer term)
 Package as a proper Home Assistant custom integration for others in the building to install via HACS.
