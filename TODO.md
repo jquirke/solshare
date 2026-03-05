@@ -10,9 +10,23 @@ Currently the widget only updates when the main app is opened. To enable true ba
 
 ### Dryer experiment
 Repeat load detection experiment with:
-- Full drum load (not empty)
-- Start time not straddling a 5-minute bucket boundary
+- Full drum load (not empty) ✓ done 2026-03-05
+- Start time not straddling a 5-minute bucket boundary ✓ done 2026-03-05
 - Baseline: compare against `solarConsumed` delta rather than raw demand
+
+## Home Assistant Integration
+
+### REST sensor (quick win)
+Poll the Allume API from HA using a `rest` sensor in `configuration.yaml` — exposes `solarConsumed`, `gridImport`, `solarPercent` as HA sensors with no custom component needed. JWT refresh every 14 days needs handling (script or automation to re-login and update the token).
+
+### Solar-driven AC automation
+Use existing IR blaster AC control + SolShare solar sensors to:
+- Pre-cool when solar export exceeds a threshold (use free energy)
+- Raise AC setpoint when grid import spikes
+- Shift AC runtime to peak solar hours instead of fixed schedule
+
+### HACS custom integration (longer term)
+Package as a proper Home Assistant custom integration for others in the building to install via HACS. Handles token refresh automatically, exposes sensors via the HA entity registry.
 
 ## General
 
