@@ -2,7 +2,7 @@
 
 Know your solar. Monitor rooftop solar generation and consumption via the [Allume Energy SolCentre](https://solcentre.allumeenergy.com) API.
 
-- [Home Assistant Integration](#home-assistant-integration) — sensors for automations and dashboards
+- [Home Assistant Integration](https://github.com/jquirke/ha-solshare) — sensors for automations and dashboards
 - [iOS App (SolarSlice)](#ios-app-solarslice) — native iPhone app with widget
 - [Alexa Skill](#alexa-skill) — voice queries via Echo devices
 - [CLI](#cli) — command-line hourly table
@@ -11,8 +11,6 @@ Know your solar. Monitor rooftop solar generation and consumption via the [Allum
 
 ```
 solshare/
-├── homeassistant/    # Home Assistant custom integration
-│   └── custom_components/solshare/
 ├── ios/              # iOS app (SolarSlice)
 │   ├── SETUP.md
 │   └── SolarSlice/
@@ -26,22 +24,9 @@ solshare/
 
 ## Home Assistant Integration
 
-A custom integration exposing SolShare data as HA sensors, updated every 5 minutes.
+Available as a separate repository: **[jquirke/ha-solshare](https://github.com/jquirke/ha-solshare)**
 
-**Sensors exposed:**
-- Current (last 5-min bucket): solar consumed, grid import, solar exported, solar %
-- Last hour: solar consumed, grid import, solar exported, solar %
-- Today: solar consumed, grid import, solar exported, solar %, total demand
-
-**Installation:**
-
-```bash
-cp -r homeassistant/custom_components/solshare /your/ha/config/custom_components/
-```
-
-Restart Home Assistant, then add via **Settings → Integrations → Add Integration → SolShare**. Enter your SolCentre email and password.
-
-Once configured, sensors appear immediately and can be added to a dashboard via **Edit Dashboard → Add Card → Entities**. Historical data is not back-populated — graphs will build from the time of installation.
+Exposes SolShare data as HA sensors (current, last hour, today), updated every 5 minutes. Supports the HA Energy dashboard.
 
 ---
 
