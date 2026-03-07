@@ -15,6 +15,7 @@ SENSORS = [
     ("solar_exported", "last_hour", "Last Hour Solar Exported", "kWh", "mdi:solar-power"),
     ("solar_percent",  "last_hour", "Last Hour Solar Percent",  "%",   "mdi:percent"),
     ("solar_consumed", "today",     "Today Solar Consumed",     "kWh", "mdi:solar-power"),
+    ("solar_generated","today",     "Today Solar Generated",    "kWh", "mdi:solar-power"),
     ("grid_import",    "today",     "Today Grid Import",        "kWh", "mdi:transmission-tower"),
     ("solar_exported", "today",     "Today Solar Exported",     "kWh", "mdi:solar-power"),
     ("solar_percent",  "today",     "Today Solar Percent",      "%",   "mdi:percent"),

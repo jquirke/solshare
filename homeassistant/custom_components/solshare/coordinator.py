@@ -119,6 +119,7 @@ def _aggregate(snaps: list) -> dict:
         "solar_consumed": round(solar, 3),
         "solar_exported": round(exported, 3),
         "solar_delivered": round(delivered, 3),
+        "solar_generated": round(solar + exported, 3),
         "grid_import": round(grid, 3),
         "solar_percent": round(percent * 100, 1),
     }
