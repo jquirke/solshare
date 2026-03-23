@@ -187,6 +187,14 @@ The exact threshold where it coarsens is unknown — somewhere between 1 hour an
 
 **Uncertainty:** It is not known whether this behaviour is intentional, documented, or stable across API versions.
 
+### 5-minute data retention window (~48 hours)
+
+5-minute resolution data is only available for approximately the most recent 48 hours. Older data is rolled up to hourly and the 5-minute buckets become permanently inaccessible.
+
+Observed boundary (2026-03-23): 5-min data available back to ~Sat 21 Mar 22:00 AEDT at 22:05 Mon 23 Mar — consistent with a ~48h rolling window. The rollup appears to run as a batch job at or shortly after the top of each hour rather than on an exact 48h boundary.
+
+**Implication:** Any 5-minute drill-down on a sampling session must be performed within 48 hours of the reading. Do not defer 5-min analysis — once the window closes it cannot be recovered.
+
 ### Data latency
 
 Data appears in the API within ~1 minute of the interval closing. A 5-minute bucket ending at 01:05 was visible by 01:06. This makes the API suitable for near-real-time monitoring applications.
