@@ -65,4 +65,5 @@ struct WidgetCacheData: Codable {
     let solarPercentToday: Double
     let lastHourSolarConsumed: Double
     let updatedAt: Date
+    var dataAvailable: Bool = true
 }

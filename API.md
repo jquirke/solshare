@@ -185,6 +185,17 @@ Despite `type=hourly`, the API returns sub-hourly buckets when the query window 
 
 The exact threshold where it coarsens is unknown — somewhere between 1 hour and 6 hours. Querying hour-by-hour is a reliable way to get 5-minute resolution across a longer period.
 
+**Confirmed working pattern for 5-min data** (2026-04-11):
+```
+# One call per hour, aligned to hour boundaries
+python3 cli/solshare.py --from 2026-04-11T14:00 --to 2026-04-11T15:00
+python3 cli/solshare.py --from 2026-04-11T15:00 --to 2026-04-11T16:00
+# etc.
+```
+Large single-window queries (e.g. full day) return 0 records when data is recent/sparse. Hour-by-hour queries return data reliably. For 5-min resolution, use 5-min aligned windows within each hour call.
+
+**Note:** Large windows (24h+) work fine for older historical data but fail silently (return 0 records) for recent/current-day data. Always use 1h windows for same-day queries.
+
 **Uncertainty:** It is not known whether this behaviour is intentional, documented, or stable across API versions.
 
 ### 5-minute data retention window (~48 hours)

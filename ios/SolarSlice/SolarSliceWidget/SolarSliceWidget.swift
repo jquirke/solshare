@@ -36,10 +36,14 @@ struct SolarWidgetView: View {
 
     var body: some View {
         if let data = entry.cache {
-            if family == .systemMedium {
-                mediumView(data: data)
+            if data.dataAvailable {
+                if family == .systemMedium {
+                    mediumView(data: data)
+                } else {
+                    smallView(data: data)
+                }
             } else {
-                smallView(data: data)
+                unavailableView(updatedAt: data.updatedAt)
             }
         } else {
             placeholderView
@@ -138,6 +142,26 @@ struct SolarWidgetView: View {
                 .font(.caption2.bold())
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func unavailableView(updatedAt: Date) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            header
+            Spacer()
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+                Text("Data not available")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(updatedText(updatedAt))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
+        .containerBackground(.fill.tertiary, for: .widget)
     }
 
     private var placeholderView: some View {

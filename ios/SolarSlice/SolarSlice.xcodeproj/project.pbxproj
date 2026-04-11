@@ -347,21 +347,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9BF36DAE2F5891CD00050999 /* AppGroupCache.swift in Sources */,
-				9BF36DAF2F5891CD00050999 /* PropertyManager.swift in Sources */,
-				9BF36DB02F5891CD00050999 /* AuthManager.swift in Sources */,
-				9BF36DB12F5891CD00050999 /* SummaryViewModel.swift in Sources */,
-				9BF36DB22F5891CD00050999 /* RootView.swift in Sources */,
-				9BF36DB32F5891CD00050999 /* TrendsView.swift in Sources */,
-				9BF36DB42F5891CD00050999 /* TrendsViewModel.swift in Sources */,
-				9BF36DB52F5891CD00050999 /* PropertyPickerView.swift in Sources */,
-				9BF36DB62F5891CD00050999 /* Models.swift in Sources */,
-				9BF36DB72F5891CD00050999 /* ContentView.swift in Sources */,
-				9BF36DB82F5891CD00050999 /* KeychainHelper.swift in Sources */,
-				9BF36DB92F5891CD00050999 /* SummaryView.swift in Sources */,
-				9BF36DBA2F5891CD00050999 /* APIClient.swift in Sources */,
-				9BF36DBB2F5891CD00050999 /* LoginView.swift in Sources */,
-				9BF36DBC2F5891CD00050999 /* ViewComponents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

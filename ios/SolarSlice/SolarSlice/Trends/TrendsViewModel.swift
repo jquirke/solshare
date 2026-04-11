@@ -20,6 +20,7 @@ struct TrendDataPoint: Identifiable {
     let solar: Double
     let grid: Double
     let exported: Double
+    var isPlaceholder: Bool = false
 }
 
 // MARK: - TrendsViewModel
@@ -94,7 +95,7 @@ final class TrendsViewModel: ObservableObject {
             dict[key, default: []].append(snapshot)
         }
 
-        return dict.map { (date, snaps) in
+        let sorted = dict.map { (date, snaps) in
             let solar = snaps.map { max($0.solarConsumed, 0) }.reduce(0, +)
             let demand = snaps.map(\.energyDemand).reduce(0, +)
             let grid = max(demand - solar, 0)
@@ -108,6 +109,27 @@ final class TrendsViewModel: ObservableObject {
                 exported: exported
             )
         }.sorted { $0.date < $1.date }
+
+        // Strip trailing all-zero points (no data yet), then re-add the current
+        // period bucket as a placeholder so the chart always shows where "now" is.
+        var result = sorted
+        while let last = result.last, last.solar == 0 && last.grid == 0 && last.exported == 0 {
+            result.removeLast()
+        }
+
+        let now = Date()
+        let currentBucket = bucketDate(now, period: period, cal: cal)
+        let alreadyPresent = result.contains { $0.date == currentBucket }
+        if !alreadyPresent {
+            result.append(TrendDataPoint(
+                id: "placeholder-\(ISO8601DateFormatter().string(from: currentBucket))",
+                label: label(for: currentBucket, period: period),
+                date: currentBucket,
+                solar: 0, grid: 0, exported: 0,
+                isPlaceholder: true
+            ))
+        }
+        return result
     }
 
     private func bucketDate(_ date: Date, period: TrendPeriod, cal: Calendar) -> Date {

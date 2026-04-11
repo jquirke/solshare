@@ -8,43 +8,61 @@ struct SummaryView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                if viewModel.isLoadingToday && viewModel.todayDemand == 0 {
+            Group {
+                if viewModel.todayState == .loading && viewModel.lastHourState == .loading {
                     ProgressView("Loading…")
                         .padding(.top, 60)
                 } else {
-                    VStack(alignment: .leading, spacing: 0) {
-                        if let address = propertyManager.selectedProperty?.displayAddress {
-                            Text(address)
-                                .font(.headline)
-                                .multilineTextAlignment(.leading)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.horizontal)
-                                .padding(.top, 12)
-                                .padding(.bottom, 4)
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            if let address = propertyManager.selectedProperty?.displayAddress {
+                                Text(address)
+                                    .font(.headline)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .padding(.horizontal)
+                                    .padding(.top, 12)
+                                    .padding(.bottom, 4)
+                            }
+                            if let error = viewModel.errorMessage {
+                                Text(error)
+                                    .font(.footnote)
+                                    .foregroundStyle(.red)
+                                    .padding(.horizontal)
+                                    .padding(.top, 8)
+                            }
+
+                            SectionHeader(title: "Last Hour")
+                            switch viewModel.lastHourState {
+                            case .loading:
+                                ProgressView().padding()
+                            case .empty:
+                                dataUnavailableNote.padding(.horizontal)
+                            case .loaded:
+                                lastHourGrid.padding(.horizontal)
+                            case .idle:
+                                EmptyView()
+                            }
+
+                            SectionHeader(title: "Today")
+                            switch viewModel.todayState {
+                            case .loading:
+                                ProgressView().padding()
+                            case .empty:
+                                dataUnavailableNote.padding(.horizontal)
+                            case .loaded:
+                                todayGrid.padding(.horizontal)
+                                if !viewModel.todayHourlyPoints.isEmpty {
+                                    SectionHeader(title: "Today by Hour")
+                                    todayHourlyChart.padding(.horizontal)
+                                }
+                            case .idle:
+                                EmptyView()
+                            }
                         }
-                        if let error = viewModel.errorMessage {
-                            Text(error)
-                                .font(.footnote)
-                                .foregroundStyle(.red)
-                                .padding(.horizontal)
-                                .padding(.top, 8)
-                        }
-
-                        SectionHeader(title: "Last Hour")
-                        lastHourGrid
-                            .padding(.horizontal)
-
-                        SectionHeader(title: "Today")
-                        todayGrid
-                            .padding(.horizontal)
-
-                        if !viewModel.todayHourlyPoints.isEmpty {
-                            SectionHeader(title: "Today by Hour")
-                            todayHourlyChart
-                                .padding(.horizontal)
-                        }
-
+                    }
+                    .refreshable {
+                        await refresh(force: true)
                     }
                 }
             }
@@ -52,7 +70,7 @@ struct SummaryView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if viewModel.isLoadingToday || viewModel.isLoadingLastHour {
+                    if viewModel.todayState == .loading || viewModel.lastHourState == .loading {
                         ProgressView()
                     } else {
                         Button {
@@ -63,13 +81,23 @@ struct SummaryView: View {
                     }
                 }
             }
-            .refreshable {
-                await refresh(force: true)
-            }
             .task {
                 await refresh(force: false)
             }
         }
+    }
+
+    // MARK: - Data unavailable
+
+    private var dataUnavailableNote: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+            Text("Data not available")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 12)
     }
 
     // MARK: - Grids

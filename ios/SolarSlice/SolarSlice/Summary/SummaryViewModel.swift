@@ -1,6 +1,13 @@
 import Foundation
 import Combine
 
+enum DataState {
+    case idle
+    case loading
+    case loaded
+    case empty   // fetch succeeded but API returned no records
+}
+
 struct HourlyDataPoint: Identifiable {
     let id: String
     let label: String
@@ -29,8 +36,8 @@ final class SummaryViewModel: ObservableObject {
     @Published private(set) var lastHourSolarPercent: Double = 0
 
     // MARK: - State
-    @Published private(set) var isLoadingToday = false
-    @Published private(set) var isLoadingLastHour = false
+    @Published private(set) var todayState: DataState = .idle
+    @Published private(set) var lastHourState: DataState = .idle
     @Published private(set) var errorMessage: String?
 
     private var todayFetchedAt: Date?
@@ -50,17 +57,22 @@ final class SummaryViewModel: ObservableObject {
         if !force, let fetchedAt = todayFetchedAt,
            Date().timeIntervalSince(fetchedAt) < cacheTTL { return }
 
-        isLoadingToday = true
-        defer { isLoadingToday = false }
+        todayState = .loading
 
         let (from, to) = todayRange()
         do {
             let snapshots = try await APIClient.shared.fetchSnapshots(
                 propertyId: property.id, from: from, to: to, token: token
             )
-            applyTodayAggregates(snapshots)
-            todayFetchedAt = Date()
-            writeWidgetCache()
+            if snapshots.isEmpty {
+                todayState = .empty
+                writeWidgetCacheUnavailable()
+            } else {
+                applyTodayAggregates(snapshots)
+                todayState = .loaded
+                todayFetchedAt = Date()
+                writeWidgetCache()
+            }
         } catch let error as APIError where error == .invalidToken {
             AuthManager.shared.handleTokenExpiry()
         } catch is CancellationError {
@@ -68,6 +80,7 @@ final class SummaryViewModel: ObservableObject {
         } catch let urlError as URLError where urlError.code == .cancelled {
             // URLSession cancelled — ignore
         } catch {
+            todayState = .idle
             errorMessage = error.localizedDescription
         }
     }
@@ -76,17 +89,21 @@ final class SummaryViewModel: ObservableObject {
         if !force, let fetchedAt = lastHourFetchedAt,
            Date().timeIntervalSince(fetchedAt) < cacheTTL { return }
 
-        isLoadingLastHour = true
-        defer { isLoadingLastHour = false }
+        lastHourState = .loading
 
         let (from, to) = lastHourRange()
         do {
             let snapshots = try await APIClient.shared.fetchSnapshots(
                 propertyId: property.id, from: from, to: to, token: token
             )
-            applyLastHourAggregates(snapshots)
-            lastHourFetchedAt = Date()
-            writeWidgetCache()
+            if snapshots.isEmpty {
+                lastHourState = .empty
+            } else {
+                applyLastHourAggregates(snapshots)
+                lastHourState = .loaded
+                lastHourFetchedAt = Date()
+                writeWidgetCache()
+            }
         } catch let error as APIError where error == .invalidToken {
             AuthManager.shared.handleTokenExpiry()
         } catch is CancellationError {
@@ -94,6 +111,7 @@ final class SummaryViewModel: ObservableObject {
         } catch let urlError as URLError where urlError.code == .cancelled {
             // URLSession cancelled — ignore
         } catch {
+            lastHourState = .idle
             errorMessage = error.localizedDescription
         }
     }
@@ -160,7 +178,19 @@ final class SummaryViewModel: ObservableObject {
             solarUsedToday: todaySolarConsumed,
             solarPercentToday: todaySolarPercent,
             lastHourSolarConsumed: lastHourSolarConsumed,
-            updatedAt: Date()
+            updatedAt: Date(),
+            dataAvailable: true
+        )
+        AppGroupCache.saveWidgetData(data)
+    }
+
+    private func writeWidgetCacheUnavailable() {
+        let data = WidgetCacheData(
+            solarUsedToday: 0,
+            solarPercentToday: 0,
+            lastHourSolarConsumed: 0,
+            updatedAt: Date(),
+            dataAvailable: false
         )
         AppGroupCache.saveWidgetData(data)
     }

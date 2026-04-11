@@ -13,7 +13,7 @@ struct TrendsView: View {
                     .padding(.horizontal)
                     .padding(.top, 8)
 
-                if viewModel.isLoading && viewModel.dataPoints.isEmpty {
+                if viewModel.dataPoints.isEmpty {
                     Spacer()
                     ProgressView("Loading…")
                     Spacer()
@@ -55,7 +55,7 @@ struct TrendsView: View {
             .task {
                 await refresh(force: false)
             }
-            .onChange(of: viewModel.selectedPeriod) { _ in
+            .onChange(of: viewModel.selectedPeriod) {
                 Task { await periodChanged() }
             }
         }
@@ -78,32 +78,43 @@ struct TrendsView: View {
                 .font(.headline)
 
             Chart(viewModel.dataPoints) { point in
-                BarMark(
-                    x: .value("Period", point.label),
-                    y: .value("Solar (kWh)", point.solar),
-                    stacking: .standard
-                )
-                .foregroundStyle(.yellow)
-
-                BarMark(
-                    x: .value("Period", point.label),
-                    y: .value("Exported (kWh)", point.exported),
-                    stacking: .standard
-                )
-                .foregroundStyle(.mint)
-
-                BarMark(
-                    x: .value("Period", point.label),
-                    y: .value("Grid (kWh)", point.grid),
-                    stacking: .standard
-                )
-                .foregroundStyle(.blue)
+                if point.isPlaceholder {
+                    if viewModel.selectedPeriod == .day {
+                        BarMark(x: .value("Period", point.date, unit: .day), y: .value("kWh", 0.5))
+                            .foregroundStyle(.gray.opacity(0.25))
+                    } else {
+                        BarMark(x: .value("Period", point.label), y: .value("kWh", 0.5))
+                            .foregroundStyle(.gray.opacity(0.25))
+                    }
+                } else if viewModel.selectedPeriod == .day {
+                    BarMark(x: .value("Period", point.date, unit: .day), y: .value("Solar (kWh)", point.solar), stacking: .standard)
+                        .foregroundStyle(.yellow)
+                    BarMark(x: .value("Period", point.date, unit: .day), y: .value("Exported (kWh)", point.exported), stacking: .standard)
+                        .foregroundStyle(.mint)
+                    BarMark(x: .value("Period", point.date, unit: .day), y: .value("Grid (kWh)", point.grid), stacking: .standard)
+                        .foregroundStyle(.blue)
+                } else {
+                    BarMark(x: .value("Period", point.label), y: .value("Solar (kWh)", point.solar), stacking: .standard)
+                        .foregroundStyle(.yellow)
+                    BarMark(x: .value("Period", point.label), y: .value("Exported (kWh)", point.exported), stacking: .standard)
+                        .foregroundStyle(.mint)
+                    BarMark(x: .value("Period", point.label), y: .value("Grid (kWh)", point.grid), stacking: .standard)
+                        .foregroundStyle(.blue)
+                }
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 6)) { _ in
-                    AxisGridLine()
-                    AxisTick()
-                    AxisValueLabel()
+                if viewModel.selectedPeriod == .day {
+                    AxisMarks(values: .automatic(desiredCount: 6)) { value in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel(format: .dateTime.day().month(.abbreviated))
+                    }
+                } else {
+                    AxisMarks(values: .automatic(desiredCount: xAxisDesiredCount)) { _ in
+                        AxisGridLine()
+                        AxisTick()
+                        AxisValueLabel()
+                    }
                 }
             }
             .chartYAxis {
@@ -144,6 +155,14 @@ struct TrendsView: View {
     }
 
     // MARK: - Helpers
+
+    private var xAxisDesiredCount: Int {
+        switch viewModel.selectedPeriod {
+        case .day:   return 6
+        case .week:  return 6
+        case .month: return 4
+        }
+    }
 
     private var chartTitle: String {
         switch viewModel.selectedPeriod {
