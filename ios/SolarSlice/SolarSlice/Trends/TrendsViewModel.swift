@@ -80,6 +80,9 @@ final class TrendsViewModel: ObservableObject {
             dataPoints = cached.points
             return
         }
+        // Clear stale data from the previous period so the loading spinner
+        // shows instead of the wrong chart while the new fetch is in flight.
+        dataPoints = []
         await refresh(property: property, token: token, forceRefresh: false)
     }
 
@@ -149,8 +152,8 @@ final class TrendsViewModel: ObservableObject {
         let f = DateFormatter()
         switch period {
         case .day:   f.dateFormat = "d MMM"
-        case .week:  f.dateFormat = "'W'w"
-        case .month: f.dateFormat = "MMM yy"
+        case .week:  f.dateFormat = "d MMM"   // "14 Apr" — avoids clipping W-numbers
+        case .month: f.dateFormat = "MMM yy"  // label used for placeholder id only
         }
         return f.string(from: date)
     }

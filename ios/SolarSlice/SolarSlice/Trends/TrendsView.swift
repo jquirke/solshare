@@ -74,60 +74,71 @@ struct TrendsView: View {
 
     private var chartCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(chartTitle)
-                .font(.headline)
+            Text(chartTitle).font(.headline)
 
-            Chart(viewModel.dataPoints) { point in
-                if point.isPlaceholder {
-                    if viewModel.selectedPeriod == .day {
-                        BarMark(x: .value("Period", point.date, unit: .day), y: .value("kWh", 0.5))
-                            .foregroundStyle(.gray.opacity(0.25))
-                    } else {
-                        BarMark(x: .value("Period", point.label), y: .value("kWh", 0.5))
-                            .foregroundStyle(.gray.opacity(0.25))
-                    }
-                } else if viewModel.selectedPeriod == .day {
-                    BarMark(x: .value("Period", point.date, unit: .day), y: .value("Solar (kWh)", point.solar), stacking: .standard)
-                        .foregroundStyle(.yellow)
-                    BarMark(x: .value("Period", point.date, unit: .day), y: .value("Exported (kWh)", point.exported), stacking: .standard)
-                        .foregroundStyle(.mint)
-                    BarMark(x: .value("Period", point.date, unit: .day), y: .value("Grid (kWh)", point.grid), stacking: .standard)
-                        .foregroundStyle(.blue)
-                } else {
-                    BarMark(x: .value("Period", point.label), y: .value("Solar (kWh)", point.solar), stacking: .standard)
-                        .foregroundStyle(.yellow)
-                    BarMark(x: .value("Period", point.label), y: .value("Exported (kWh)", point.exported), stacking: .standard)
-                        .foregroundStyle(.mint)
-                    BarMark(x: .value("Period", point.label), y: .value("Grid (kWh)", point.grid), stacking: .standard)
-                        .foregroundStyle(.blue)
-                }
-            }
-            .chartXAxis {
-                if viewModel.selectedPeriod == .day {
-                    AxisMarks(values: .automatic(desiredCount: 6)) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel(format: .dateTime.day().month(.abbreviated))
-                    }
-                } else {
-                    AxisMarks(values: .automatic(desiredCount: xAxisDesiredCount)) { _ in
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel()
-                    }
-                }
-            }
-            .chartYAxis {
-                AxisMarks { value in
-                    AxisGridLine()
-                    AxisValueLabel {
-                        if let d = value.as(Double.self) {
-                            Text(String(format: "%.0f", d))
+            GeometryReader { geo in
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        Chart(viewModel.dataPoints) { point in
+                            if point.isPlaceholder {
+                                BarMark(
+                                    x: .value("Period", point.date, unit: xUnit),
+                                    y: .value("kWh", 0.5)
+                                )
+                                .foregroundStyle(.gray.opacity(0.25))
+                            } else {
+                                BarMark(
+                                    x: .value("Period", point.date, unit: xUnit),
+                                    y: .value("Solar (kWh)", point.solar),
+                                    stacking: .standard
+                                )
+                                .foregroundStyle(.yellow)
+                                BarMark(
+                                    x: .value("Period", point.date, unit: xUnit),
+                                    y: .value("Exported (kWh)", point.exported),
+                                    stacking: .standard
+                                )
+                                .foregroundStyle(.mint)
+                                BarMark(
+                                    x: .value("Period", point.date, unit: xUnit),
+                                    y: .value("Grid (kWh)", point.grid),
+                                    stacking: .standard
+                                )
+                                .foregroundStyle(.blue)
+                            }
                         }
+                        .chartXAxis {
+                            AxisMarks(values: .automatic(desiredCount: xAxisLabelCount)) { _ in
+                                AxisGridLine()
+                                AxisTick()
+                                AxisValueLabel(format: xAxisFormat)
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks { value in
+                                AxisGridLine()
+                                AxisValueLabel {
+                                    if let d = value.as(Double.self) {
+                                        Text(String(format: "%.0f", d))
+                                    }
+                                }
+                            }
+                        }
+                        .frame(
+                            width: max(geo.size.width, CGFloat(viewModel.dataPoints.count) * pointWidth),
+                            height: 240
+                        )
+                        .id("chart")
+                    }
+                    .onAppear {
+                        proxy.scrollTo("chart", anchor: .trailing)
+                    }
+                    .onChange(of: viewModel.dataPoints.count) {
+                        proxy.scrollTo("chart", anchor: .trailing)
                     }
                 }
             }
-            .frame(height: 260)
+            .frame(height: 240)
         }
         .cardStyle()
     }
@@ -156,11 +167,37 @@ struct TrendsView: View {
 
     // MARK: - Helpers
 
-    private var xAxisDesiredCount: Int {
+    private var xUnit: Calendar.Component {
         switch viewModel.selectedPeriod {
-        case .day:   return 6
+        case .day:   return .day
+        case .week:  return .weekOfYear
+        case .month: return .month
+        }
+    }
+
+    private var xAxisFormat: Date.FormatStyle {
+        switch viewModel.selectedPeriod {
+        case .day:   return .dateTime.day().month(.abbreviated)
+        case .week:  return .dateTime.day().month(.abbreviated)
+        case .month: return .dateTime.month(.abbreviated).year(.twoDigits)
+        }
+    }
+
+    // Desired number of axis labels within the scrollable width.
+    private var xAxisLabelCount: Int {
+        switch viewModel.selectedPeriod {
+        case .day:   return 8
         case .week:  return 6
         case .month: return 4
+        }
+    }
+
+    // Minimum pixels per data point — sets scroll width when data exceeds screen.
+    private var pointWidth: CGFloat {
+        switch viewModel.selectedPeriod {
+        case .day:   return 16   // 31 days × 16 = 496pt → scrolls on iPhone
+        case .week:  return 24   // 13 weeks × 24 = 312pt → fits most screens
+        case .month: return 26   // 13 months × 26 = 338pt → fits most screens
         }
     }
 
