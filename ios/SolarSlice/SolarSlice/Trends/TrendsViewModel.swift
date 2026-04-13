@@ -21,6 +21,7 @@ struct TrendDataPoint: Identifiable {
     let grid: Double
     let exported: Double
     var isPlaceholder: Bool = false
+    var isPartial: Bool = false
 }
 
 // MARK: - TrendsViewModel
@@ -90,6 +91,7 @@ final class TrendsViewModel: ObservableObject {
 
     private func bucket(snapshots: [Snapshot], period: TrendPeriod) -> [TrendDataPoint] {
         let cal = Calendar.current
+
         var dict: [Date: [Snapshot]] = [:]
 
         for snapshot in snapshots {
@@ -98,41 +100,84 @@ final class TrendsViewModel: ObservableObject {
             dict[key, default: []].append(snapshot)
         }
 
+        let currentBucketForPartial = bucketDate(Date(), period: period, cal: cal)
         let sorted = dict.map { (date, snaps) in
             let solar = snaps.map { max($0.solarConsumed, 0) }.reduce(0, +)
             let demand = snaps.map(\.energyDemand).reduce(0, +)
             let grid = max(demand - solar, 0)
             let exported = snaps.map { max($0.solarExported, 0) }.reduce(0, +)
+            let isPartial: Bool
+            if date < currentBucketForPartial, let lastSnap = snaps.compactMap(\.startDate).max() {
+                isPartial = cal.component(.hour, from: lastSnap) < 20
+            } else {
+                isPartial = false
+            }
             return TrendDataPoint(
                 id: ISO8601DateFormatter().string(from: date),
                 label: label(for: date, period: period),
                 date: date,
                 solar: solar,
                 grid: grid,
-                exported: exported
+                exported: exported,
+                isPartial: isPartial
             )
         }.sorted { $0.date < $1.date }
 
-        // Strip trailing all-zero points (no data yet), then re-add the current
-        // period bucket as a placeholder so the chart always shows where "now" is.
-        var result = sorted
+        // Fill mid-range gaps: insert a placeholder for every bucket absent from
+        // the API response so blank space never silently swallows missing days.
+        // Then strip trailing all-zero points and re-add one placeholder per missing
+        // bucket up to today, so recent outages also render as grey bars.
+        let iso = ISO8601DateFormatter()
+        var result: [TrendDataPoint] = []
+        for (i, point) in sorted.enumerated() {
+            if i > 0 {
+                var gap = nextBucket(after: sorted[i - 1].date, period: period, cal: cal)
+                while gap < point.date {
+                    result.append(TrendDataPoint(
+                        id: "placeholder-\(iso.string(from: gap))",
+                        label: label(for: gap, period: period),
+                        date: gap,
+                        solar: 0, grid: 0, exported: 0,
+                        isPlaceholder: true
+                    ))
+                    gap = nextBucket(after: gap, period: period, cal: cal)
+                }
+            }
+            result.append(point)
+        }
         while let last = result.last, last.solar == 0 && last.grid == 0 && last.exported == 0 {
             result.removeLast()
         }
 
         let now = Date()
         let currentBucket = bucketDate(now, period: period, cal: cal)
-        let alreadyPresent = result.contains { $0.date == currentBucket }
-        if !alreadyPresent {
+        let startBucket: Date
+        if let lastReal = result.last {
+            startBucket = nextBucket(after: lastReal.date, period: period, cal: cal)
+        } else {
+            startBucket = currentBucket
+        }
+
+        var bucket = startBucket
+        while bucket <= currentBucket {
             result.append(TrendDataPoint(
-                id: "placeholder-\(ISO8601DateFormatter().string(from: currentBucket))",
-                label: label(for: currentBucket, period: period),
-                date: currentBucket,
+                id: "placeholder-\(iso.string(from: bucket))",
+                label: label(for: bucket, period: period),
+                date: bucket,
                 solar: 0, grid: 0, exported: 0,
                 isPlaceholder: true
             ))
+            bucket = nextBucket(after: bucket, period: period, cal: cal)
         }
         return result
+    }
+
+    private func nextBucket(after date: Date, period: TrendPeriod, cal: Calendar) -> Date {
+        switch period {
+        case .day:   return cal.date(byAdding: .day, value: 1, to: date) ?? date
+        case .week:  return cal.date(byAdding: .weekOfYear, value: 1, to: date) ?? date
+        case .month: return cal.date(byAdding: .month, value: 1, to: date) ?? date
+        }
     }
 
     private func bucketDate(_ date: Date, period: TrendPeriod, cal: Calendar) -> Date {

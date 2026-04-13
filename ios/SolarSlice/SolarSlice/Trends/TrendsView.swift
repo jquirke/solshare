@@ -87,24 +87,25 @@ struct TrendsView: View {
                                 )
                                 .foregroundStyle(.gray.opacity(0.25))
                             } else {
+                                let opacity = point.isPartial ? 0.4 : 1.0
                                 BarMark(
                                     x: .value("Period", point.date, unit: xUnit),
                                     y: .value("Solar (kWh)", point.solar),
                                     stacking: .standard
                                 )
-                                .foregroundStyle(.yellow)
+                                .foregroundStyle(.yellow.opacity(opacity))
                                 BarMark(
                                     x: .value("Period", point.date, unit: xUnit),
                                     y: .value("Exported (kWh)", point.exported),
                                     stacking: .standard
                                 )
-                                .foregroundStyle(.mint)
+                                .foregroundStyle(.mint.opacity(opacity))
                                 BarMark(
                                     x: .value("Period", point.date, unit: xUnit),
                                     y: .value("Grid (kWh)", point.grid),
                                     stacking: .standard
                                 )
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.blue.opacity(opacity))
                             }
                         }
                         .chartXAxis {
