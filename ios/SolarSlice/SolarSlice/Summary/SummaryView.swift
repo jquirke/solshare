@@ -186,42 +186,59 @@ struct SummaryView: View {
 
     private var todayHourlyChart: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Chart(viewModel.todayHourlyPoints) { point in
-                BarMark(
-                    x: .value("Hour", point.label),
-                    y: .value("Solar (kWh)", point.solar),
-                    stacking: .standard
-                )
-                .foregroundStyle(.yellow)
+            GeometryReader { geo in
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        Chart(viewModel.todayHourlyPoints) { point in
+                            BarMark(
+                                x: .value("Hour", point.label),
+                                y: .value("Solar (kWh)", point.solar),
+                                stacking: .standard
+                            )
+                            .foregroundStyle(.yellow)
 
-                BarMark(
-                    x: .value("Hour", point.label),
-                    y: .value("Exported (kWh)", point.exported),
-                    stacking: .standard
-                )
-                .foregroundStyle(.mint)
+                            BarMark(
+                                x: .value("Hour", point.label),
+                                y: .value("Exported (kWh)", point.exported),
+                                stacking: .standard
+                            )
+                            .foregroundStyle(.mint)
 
-                BarMark(
-                    x: .value("Hour", point.label),
-                    y: .value("Grid (kWh)", point.grid),
-                    stacking: .standard
-                )
-                .foregroundStyle(.blue)
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 8)) { _ in
-                    AxisGridLine()
-                    AxisTick()
-                    AxisValueLabel()
-                }
-            }
-            .chartYAxis {
-                AxisMarks { value in
-                    AxisGridLine()
-                    AxisValueLabel {
-                        if let d = value.as(Double.self) {
-                            Text(String(format: "%.2f", d))
+                            BarMark(
+                                x: .value("Hour", point.label),
+                                y: .value("Grid (kWh)", point.grid),
+                                stacking: .standard
+                            )
+                            .foregroundStyle(.blue)
                         }
+                        .chartXAxis {
+                            AxisMarks { _ in
+                                AxisGridLine()
+                                AxisTick()
+                                AxisValueLabel()
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks { value in
+                                AxisGridLine()
+                                AxisValueLabel {
+                                    if let d = value.as(Double.self) {
+                                        Text(String(format: "%.2f", d))
+                                    }
+                                }
+                            }
+                        }
+                        .frame(
+                            width: max(geo.size.width, CGFloat(viewModel.todayHourlyPoints.count) * 28),
+                            height: 200
+                        )
+                        .id("hourlyChart")
+                    }
+                    .onAppear {
+                        proxy.scrollTo("hourlyChart", anchor: .trailing)
+                    }
+                    .onChange(of: viewModel.todayHourlyPoints.count) {
+                        proxy.scrollTo("hourlyChart", anchor: .trailing)
                     }
                 }
             }
